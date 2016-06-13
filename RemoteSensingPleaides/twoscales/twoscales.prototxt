@@ -1,0 +1,392 @@
+name: "twoscalefcn"
+
+
+
+layer {
+  name: "pairdata"
+  type: "ImagePairData"
+  top: "data"
+  top: "label"
+  image_pair_data_param {
+    image_dir: "/user/emaggior/home/Documents/Images/Forez_dataset/train/sat"
+    label_dir: "/user/emaggior/home/Documents/Images/Forez_dataset/train/map"
+    batch_size: 64
+    h_img: 64
+    w_img: 64
+    h_map: 64
+    w_map: 64
+    scale: 0.00390625
+  }
+  include: { phase: TRAIN }
+}
+
+
+
+layer {
+  name: "data"
+  type: "ImagePairData"
+  top: "data"
+  top: "label"
+  image_pair_data_param {
+    image_dir: "/user/emaggior/home/Documents/Images/Forez_dataset/test/sat"
+    label_dir: "/user/emaggior/home/Documents/Images/Forez_dataset/test/map"
+    batch_size: 1
+    h_img: 600
+    w_img: 600
+    h_map: 600
+    w_map: 600
+    scale: 0.00390625
+    random: false
+  }
+  include: { phase: TEST }
+}
+
+
+
+layer {
+  name: "downsample"
+  type: "Pooling"
+  bottom: "data"
+  top: "data_"
+  pooling_param {
+    pool: AVE
+    kernel_size: 2 
+    stride: 2      
+  }
+}
+
+
+# first module
+
+
+
+
+
+
+layer {
+  name: "conv1_fine"
+  type: "Convolution"
+  bottom: "data_"
+  top: "conv1_fine"
+  convolution_param {
+    num_output: 64
+    kernel_size: 3
+    pad: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+
+layer {
+  name: "conv1_down"
+  type: "Pooling"
+  bottom: "data_"
+  top: "conv1_coarseinput"
+  pooling_param {
+    pool: AVE
+    kernel_size: 4 
+    stride: 4
+    #pad: 2      
+  }
+}
+
+layer {
+  name: "conv1_coarse"
+  type: "Convolution"
+  bottom: "conv1_coarseinput"
+  top: "conv1_coarse"
+  convolution_param {
+    num_output: 64
+    kernel_size: 3
+    pad: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+
+layer {
+	name: "conv1_up"
+	type: "Deconvolution"
+	bottom: "conv1_coarse"
+	top: "conv1_coarse_up"
+	convolution_param {
+	    num_output: 64
+	    group: 64
+	    bias_term: false
+	    kernel_size: 8
+	    stride: 4
+	    pad: 2
+	    weight_filler: { type: "bilinear" }
+	}	
+	#param { lr_mult: 0 decay_mult: 0 }
+}
+
+layer {
+  name: "conv1_add"
+  type: "Eltwise"
+  bottom: "conv1_fine"
+  bottom: "conv1_coarse_up"
+  top: "conv1"
+  eltwise_param {
+    operation: SUM   
+  }
+}
+
+
+layer {
+  name: "reluconv1"
+  type: "ReLU"
+  bottom: "conv1"
+  top: "conv1"
+}
+
+
+
+
+
+
+# second module
+
+
+layer {
+  name: "conv2_fine"
+  type: "Convolution"
+  bottom: "conv1"
+  top: "conv2_fine"
+  convolution_param {
+    num_output: 64
+    kernel_size: 3
+    pad: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+
+layer {
+  name: "conv2_down"
+  type: "Pooling"
+  bottom: "conv1"
+  top: "conv2_coarseinput"
+  pooling_param {
+    pool: AVE
+    kernel_size: 4 
+    stride: 4      
+  }
+}
+
+layer {
+  name: "conv2_coarse"
+  type: "Convolution"
+  bottom: "conv2_coarseinput"
+  top: "conv2_coarse"
+  convolution_param {
+    num_output: 64
+    kernel_size: 3
+    pad: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+
+layer {
+	name: "conv2_up"
+	type: "Deconvolution"
+	bottom: "conv2_coarse"
+	top: "conv2_coarse_up"
+	convolution_param {
+	    num_output: 64
+            group: 64
+	    bias_term: false
+	    kernel_size: 8
+	    stride: 4
+	    pad: 2
+	    weight_filler: { type: "bilinear" }
+	}	
+	#param { lr_mult: 0 decay_mult: 0 }
+}
+
+layer {
+  name: "conv2_add"
+  type: "Eltwise"
+  bottom: "conv2_fine"
+  bottom: "conv2_coarse_up"
+  top: "conv2"
+  eltwise_param {
+    operation: SUM   
+  }
+}
+
+
+layer {
+  name: "reluconv2"
+  type: "ReLU"
+  bottom: "conv2"
+  top: "conv2"
+}
+
+
+
+
+# third module
+
+layer {
+  name: "conv3_fine"
+  type: "Convolution"
+  bottom: "conv2"
+  top: "conv3_fine"
+  convolution_param {
+    num_output: 1
+    kernel_size: 3
+    pad: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+
+layer {
+  name: "conv3_down"
+  type: "Pooling"
+  bottom: "conv2"
+  top: "conv3_coarseinput"
+  pooling_param {
+    pool: AVE
+    kernel_size: 4 
+    stride: 4      
+  }
+}
+
+layer {
+  name: "conv3_coarse"
+  type: "Convolution"
+  bottom: "conv3_coarseinput"
+  top: "conv3_coarse"
+  convolution_param {
+    num_output: 1
+    kernel_size: 3
+    pad: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+
+layer {
+	name: "conv3_up"
+	type: "Deconvolution"
+	bottom: "conv3_coarse"
+	top: "conv3_coarse_up"
+	convolution_param {
+	    num_output: 1
+            group: 1
+	    bias_term: false
+	    kernel_size: 8
+	    stride: 4
+	    pad: 2
+	    weight_filler: { type: "bilinear" }
+	}	
+	#param { lr_mult: 0 decay_mult: 0 }
+}
+
+layer {
+  name: "conv3_add"
+  type: "Eltwise"
+  bottom: "conv3_fine"
+  bottom: "conv3_coarse_up"
+  top: "conv3"
+  eltwise_param {
+    operation: SUM   
+  }
+}
+
+
+
+
+
+
+
+
+
+
+# bring back to original resolution
+
+layer {
+	name: "upsample"
+	type: "Deconvolution"
+	bottom: "conv3"
+	top: "output"
+	convolution_param {
+	    num_output: 1
+	    bias_term: false
+	    kernel_size: 4
+	    stride: 2
+	    pad: 1
+	    weight_filler: { type: "bilinear" }
+	}
+	
+	param { lr_mult: 0 decay_mult: 0 }
+
+}
+
+
+
+
+
+layer {
+  name: "prob"
+  type: "Sigmoid"
+  bottom: "output"
+  top: "prob"
+  include: {phase: TEST}
+}
+
+#without this layer all prob values are printed
+#during TEST phase
+layer {
+	name: "silence"
+	type: "Silence"
+	bottom: "prob"
+	include: {phase: TEST}
+}
+
+
+
+
+
+
+
+
+
+
+layer {
+  name: "loss"
+  type: "SigmoidCrossEntropyLoss"
+  bottom: "output"
+  bottom: "label"
+  top: "loss"
+
+loss_param { normalize: false }
+  
+}

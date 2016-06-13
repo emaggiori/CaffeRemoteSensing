@@ -403,7 +403,64 @@ message LayerParameter {
   optional ThresholdParameter threshold_param = 128;
   optional TileParameter tile_param = 138;
   optional WindowDataParameter window_data_param = 129;
+
+  //layers for remote sensing
+  optional ImagePairDataParameter image_pair_data_param = 150;
+  optional CropDataParameter crop_data_param = 151;
 }
+
+
+//layers for remote sensing
+
+// Message that stores parameters used by ImagePairDataLayer
+message ImagePairDataParameter {
+  // Specify the data source.
+  optional string image_dir = 1;
+  optional string label_dir = 19;
+  // Specify the batch size.
+  optional uint32 batch_size = 4;
+  // The rand_skip variable is for the data layer to skip a few data points
+  // to avoid all asynchronous sgd clients to start at the same point. The skip
+  // point would be set as rand_skip * rand(0,1). Note that rand_skip should not
+  // be larger than the number of keys in the leveldb.
+  optional uint32 rand_skip = 7 [default = 0];
+  // Whether or not ImageLayer should shuffle the list of files at every epoch.
+  optional bool shuffle = 8 [default = false];
+  optional uint32 h_img = 9 [default = 0];
+  optional uint32 w_img = 10 [default = 0];
+  optional uint32 h_map = 11 [default = 0];
+  optional uint32 w_map = 12 [default = 0];
+  optional uint32 channels = 13 [default = 3];
+  optional bool random = 18 [default = true];
+  optional float scale = 2 [default = 1];
+  optional float mean = 3 [default = 127];
+  optional bool multiclass = 20 [default = false];
+  optional uint32 class_step = 21 [default = 1];
+}
+
+// Message that stores parameters used by CropDataLayer
+message CropDataParameter {
+	optional int32 h = 1;
+	optional int32 w = 2;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Message that stores parameters used to apply transformation
 // to the data layer's data

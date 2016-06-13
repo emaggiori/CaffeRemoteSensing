@@ -1,0 +1,187 @@
+name: "fullyconv"
+
+
+
+layer {
+  name: "pairdata"
+  type: "ImagePairData"
+  top: "data"
+  top: "label"
+  image_pair_data_param {
+    image_dir: "pathToDataset/mass_buildings/train/sat"
+    label_dir: "pathToDataset/mass_buildings/train/map"
+    batch_size: 64
+    h_img: 80
+    w_img: 80
+    h_map: 16
+    w_map: 16
+    scale: 0.00390625
+  }
+  include: { phase: TRAIN }
+}
+
+
+
+layer {
+  name: "data"
+  type: "ImagePairData"
+  top: "data"
+  top: "label"
+  image_pair_data_param {
+    image_dir: "pathToDataset/mass_buildings/test/sat"
+    label_dir: "pathToDataset/mass_buildings/test/map"
+    batch_size: 10
+    h_img: 482
+    w_img: 482
+    h_map: 416
+    w_map: 416
+    scale: 0.00390625
+    random: false
+  }
+  include: { phase: TEST }
+}
+
+
+
+
+layer {
+  name: "conv1"
+  type: "Convolution"
+  bottom: "data"
+  top: "conv1"
+  convolution_param {
+    num_output: 64
+    kernel_size: 12
+    stride: 4
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+
+layer {
+  name: "reluconv1"
+  type: "ReLU"
+  bottom: "conv1"
+  top: "conv1"
+}
+
+
+
+layer {
+  name: "conv2"
+  type: "Convolution"
+  bottom: "conv1"
+  top: "conv2"
+  convolution_param {
+    num_output: 112
+    kernel_size: 4
+    stride: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+  
+}
+layer {
+  name: "reluconv2"
+  type: "ReLU"
+  bottom: "conv2"
+  top: "conv2"
+}
+
+layer {
+  name: "conv3"
+  type: "Convolution"
+  bottom: "conv2"
+  top: "conv3"
+  convolution_param {
+    num_output: 80
+    kernel_size: 3
+    stride: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+  
+}
+
+layer {
+  name: "reluconv3"
+  type: "ReLU"
+  bottom: "conv3"
+  top: "conv3"
+}
+
+layer {
+  name: "conv4"
+  type: "Convolution"
+  bottom: "conv3"
+  top: "conv4"
+  convolution_param {
+    num_output: 1
+    kernel_size: 9
+    stride: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+  
+}
+
+
+layer {
+	name: "upsample"
+	type: "Deconvolution"
+	bottom: "conv4"
+	top: "output"
+	convolution_param {
+	    num_output: 1
+	    bias_term: false
+	    kernel_size: 8
+	    stride: 4
+	    pad: 4
+	    weight_filler: { type: "bilinear" }
+	}
+	
+}
+
+
+layer {
+  name: "prob"
+  type: "Sigmoid"
+  bottom: "output"
+  top: "prob"
+  include: {phase: TEST}
+}
+
+#without this layer all prob values are printed
+#during TEST phase
+layer {
+	name: "silence"
+	type: "Silence"
+	bottom: "prob"
+	include: {phase: TEST}
+}
+
+
+layer {
+  name: "loss"
+  type: "SigmoidCrossEntropyLoss"
+  bottom: "output"
+  bottom: "label"
+  top: "loss"
+  
+}

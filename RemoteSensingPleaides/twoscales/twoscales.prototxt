@@ -388,5 +388,5 @@ layer {
   top: "loss"
 
 loss_param { normalize: false }
-  
+  include: {phase: TRAIN}
 }

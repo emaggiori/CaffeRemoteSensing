@@ -183,5 +183,5 @@ layer {
   bottom: "output"
   bottom: "label"
   top: "loss"
-  
+  include: {phase: TRAIN}
 }

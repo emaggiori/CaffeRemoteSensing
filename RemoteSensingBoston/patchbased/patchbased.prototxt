@@ -16,7 +16,7 @@ layer {
     h_map: 16
     w_map: 16
     scale: 0.00390625
-    #scale: 0.008
+    mean: 127
   }
   include: { phase: TRAIN }
 }

@@ -117,7 +117,9 @@ void ImagePairDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& botto
     string filename1 = lines_[i].first;
     string filename2 = lines_[i].second;
 
-    Mat img1 = imread(filename1);
+    //the -1 indicates to read image as is,
+    //possibly including an alpha channel
+    Mat img1 = imread(filename1,-1);
     CHECK(img1.data) << "Could not read image "<<filename1;
 
     Mat img2;
@@ -165,7 +167,7 @@ void ImagePairDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& botto
 
   //we only accept color images at the moment
   channels=this->layer_param_.image_pair_data_param().channels();
-  CHECK(channels==3)<<"Only one/three channel input accepted";
+  CHECK(channels==1||channels==3||channels==4)<<"Only one, three or four channel input accepted";
 
   //transformation parameters
   scaleFactor = this->layer_param_.image_pair_data_param().scale();
@@ -299,13 +301,39 @@ void ImagePairDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
     }
 
 
+    //randomly rotate/flip the image
+    int transpose=0;
+    int flip_=2;
+    if (this->random) {
+
+        Mat subimg_t = subimg.clone();
+        transpose = rng.uniform(0,2);
+        flip_ = rng.uniform(-1,3);
+
+        if (transpose) {
+            cv::transpose(subimg_t,subimg_t);	
+        }
+        if (flip_<2) {
+            cv::flip(subimg_t, subimg_t, flip_);		
+        }
+        subimg=subimg_t;
+    }
+
+
     //fill the image data to the Caffe blob
     for (int c = 0; c < channels; ++c) {
         for (int h = 0; h < h_win1; ++h) {
           for (int w = 0; w < w_win1; ++w) {
 			
             //get the pixel value at this position and channel  
-            Dtype pixel =  static_cast<Dtype>(subimg.at<cv::Vec3b>(h, w)[c]);
+            Dtype pixel;
+
+            switch (channels) {
+               case 1: pixel =  static_cast<Dtype>(subimg.at<uchar>(h, w)); break;
+               case 3: pixel =  static_cast<Dtype>(subimg.at<cv::Vec3b>(h, w)[c]); break;
+               case 4: pixel =  static_cast<Dtype>(subimg.at<cv::Vec4b>(h, w)[c]); break;
+               default: exit(1);
+            }
 
 	    //the index where to put this value in the blob
             int index = ((item_id * channels + c) * h_win1 + h)* w_win1 + w;
@@ -334,6 +362,19 @@ void ImagePairDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
 
         //select window
         Mat subimg2 = img2.rowRange(topY2,topY2+h_win2).colRange(leftX2,leftX2+w_win2);
+
+        //apply same rotation/flipping as before
+        if (this->random) {
+            Mat subimg2_t = subimg2.clone();
+            if (transpose) {
+                cv::transpose(subimg2_t,subimg2_t);	
+            }
+            if (flip_<2) {
+                cv::flip(subimg2_t, subimg2_t, flip_);		
+            }
+            subimg2=subimg2_t;
+        }
+
 
         for (int h = 0; h < h_win2; ++h) {
               for (int w = 0; w < w_win2; ++w) {

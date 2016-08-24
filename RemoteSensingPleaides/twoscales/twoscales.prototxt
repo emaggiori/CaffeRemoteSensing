@@ -16,6 +16,7 @@ layer {
     h_map: 64
     w_map: 64
     scale: 0.00390625
+    mean: 127
   }
   include: { phase: TRAIN }
 }
@@ -36,6 +37,7 @@ layer {
     h_map: 600
     w_map: 600
     scale: 0.00390625
+    mean: 127
     random: false
   }
   include: { phase: TEST }

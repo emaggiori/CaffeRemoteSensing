@@ -433,7 +433,7 @@ message ImagePairDataParameter {
   optional uint32 channels = 13 [default = 3];
   optional bool random = 18 [default = true];
   optional float scale = 2 [default = 1];
-  optional float mean = 3 [default = 127];
+  optional float mean = 3 [default = 0];
   optional bool multiclass = 20 [default = false];
   optional uint32 class_step = 21 [default = 1];
 }

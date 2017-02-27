@@ -8,8 +8,8 @@ layer {
   top: "data"
   top: "label"
   image_pair_data_param {
-    image_dir: "/user/emaggior/home/Documents/Images/Forez_dataset/train/sat"
-    label_dir: "/user/emaggior/home/Documents/Images/Forez_dataset/train/map"
+    image_dir: "pathToTrainingImgs"
+    label_dir: "pathToTrainingLabels"
     batch_size: 64
     h_img: 64
     w_img: 64
@@ -27,10 +27,8 @@ layer {
   name: "data"
   type: "ImagePairData"
   top: "data"
-  top: "label"
   image_pair_data_param {
-    image_dir: "/user/emaggior/home/Documents/Images/Forez_dataset/test/sat"
-    label_dir: "/user/emaggior/home/Documents/Images/Forez_dataset/test/map"
+    image_dir: "RemoteSensingPleaides/images"
     batch_size: 1
     h_img: 600
     w_img: 600
